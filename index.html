@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="data:," />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="数字孪生设备场景与传感器状态" />
+    <title>数字孪生 · 设备总览</title>
+    <script type="module" crossorigin src="./assets/index-3874d338a456.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C3l1jDsm.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">DT</span><div><strong>数字孪生</strong><small>设备总览与状态监测</small></div></div>
+        <div class="top-title"><h1>加工与检测工艺线</h1></div>
+        <div class="top-actions"><nav id="operator-modes" aria-label="运行模式"><button type="button" data-mode="demo" aria-pressed="true">离线演示</button><button type="button" data-mode="field" aria-pressed="false">现场实时</button><button type="button" data-mode="history" aria-pressed="false">历史回看</button></nav><button id="reset-view" class="ghost" type="button">重置取景</button><button id="toggle-grid" class="ghost active" type="button">网格</button></div>
+      </header>
+      <aside class="panel left-panel" aria-label="设备分组与传感器">
+        <section class="panel-section"><div class="section-label">设备视图</div><nav id="group-list" class="group-list" aria-label="组合线与设备专页"></nav></section>
+        <section class="panel-section operator-source">
+          <div class="panel-heading"><h2>数据来源</h2><span class="state-badge" id="source-mode">离线演示</span></div>
+          <p id="source-description">状态来自工艺演示，机构动作按模型计算。</p>
+          <div class="operator-demo-actions"><button id="work-play" class="ghost active" type="button" disabled>播放工作状态</button><button id="delay-example" class="ghost" type="button" disabled>查看五轴读码延迟</button></div>
+          <details id="field-config"><summary>现场事件与记录文件</summary>
+            <form id="field-form"><label for="field-url">只读事件流地址（SSE）</label><input type="url" id="field-url" required placeholder="https://…" autocomplete="off"><div><button class="ghost" type="submit">连接</button><button class="ghost" id="field-stop" type="button" disabled>断开</button></div></form>
+            <label for="field-file">打开现场记录（JSON）</label><input id="field-file" type="file" accept=".json,application/json">
+            <button id="export-events" class="ghost" type="button" disabled>保存本次采集</button>
+            <p id="field-message" role="status">尚未配置现场数据源。</p>
+          </details>
+        </section>
+        <section class="panel-section" id="history-controls" aria-label="历史回看" hidden></section>
+        <section id="camera-panel" class="panel-section" aria-labelledby="camera-heading">
+          <div class="panel-heading"><h2 id="camera-heading">现场摄像头</h2><span id="camera-status" class="state-badge" role="status">未连接</span></div>
+          <form id="camera-form" autocomplete="off" novalidate>
+            <label for="camera-url">摄像头地址</label>
+            <input id="camera-url" type="url" placeholder="输入视频或图像流 URL" autocomplete="off" spellcheck="false" aria-describedby="camera-message" />
+            <div class="camera-actions">
+              <button class="ghost active" type="submit">连接</button>
+              <button class="ghost" id="camera-stop" type="button" disabled>停止</button>
+              <button class="ghost" id="camera-clear" type="button" disabled>清除</button>
+            </div>
+          </form>
+          <div id="camera-preview" aria-label="摄像头预览"><span>等待画面</span></div>
+          <p id="camera-message" aria-live="polite">支持 HTTP(S) 视频、图像和 MJPEG。</p>
+        </section>
+        <section class="panel-section sensor-panel">
+          <div class="panel-heading"><h2>传感器数据</h2><span id="sensor-source" class="state-badge partial">待接入</span></div>
+          <div class="telemetry"><span>线激光测量</span><strong data-value="null">— <small>mm</small></strong><em>尚未连接</em></div>
+          <div class="telemetry"><span>编码器位置</span><strong data-value="null">— <small>pulse</small></strong><em>尚未连接</em></div>
+          <div class="telemetry"><span>输送带速度</span><strong data-value="null">— <small>m/s</small></strong><em>尚未连接</em></div>
+          <div class="telemetry"><span>数据时间</span><strong class="empty-value" data-value="null">暂无数据</strong><em>等待采集端</em></div>
+        </section>
+        <section class="panel-section legend"><div class="section-label">模型标记</div><div><i class="dot verified"></i>CAD 来源模型</div><div><i class="dot reference"></i>替代 / 参考模型</div></section>
+      </aside>
+      <main class="scene-stage">
+        <div id="viewport" class="viewport" aria-label="三维设备场景"></div>
+        <div class="scene-heading"><h2 id="group-title">组合工艺线</h2><p id="group-description"></p></div>
+        <div id="selection-card" class="selection-card hidden"></div>
+        <div class="viewport-note"><span id="scene-status" role="status">正在加载设备模型…</span><span class="interaction-hint">左键旋转 · 右键平移 · 指向设备滚轮缩放 · 双击聚焦</span></div>
+      </main>
+      <aside class="panel right-panel" aria-label="设备状态与资产信息">
+        <section class="panel-section" id="operations-panel" aria-label="运行总览"></section>
+        <section class="panel-section work-panel" aria-label="工作状态演示">
+          <div class="panel-heading"><h2>工作状态演示</h2><span id="work-mode" class="state-badge">待机</span></div>
+          <div class="work-step" id="work-step">未启动演示</div>
+          <input id="work-timeline" class="work-timeline" type="range" min="0" max="16" step="0.025" value="0" aria-label="查看演示时刻（秒）" />
+          <div class="work-meta"><span id="work-progress-text">0.0 / 16 秒</span><span id="work-relation-text"></span></div>
+          <div class="work-actions">
+            <button id="work-reset" class="ghost" type="button">回到待机</button>
+          </div>
+          <div id="machine-views" class="machine-views hidden" aria-label="工作特写">
+            <button class="ghost" data-view-group="integrated" data-work-view="cnc" type="button">数控机床</button>
+            <button class="ghost" data-view-group="integrated" data-work-view="haas" type="button">Haas 铣床</button>
+            <button class="ghost" data-view-group="integrated" data-work-view="five-axis" type="button">五轴加工中心</button>
+            <button class="ghost" data-view-group="integrated" data-work-view="brt" type="button">四轴机器人</button>
+            <button class="ghost" data-view-group="integrated" data-work-view="warehouse" type="button">立库</button>
+          </div>
+          <p class="work-note">拖动时间条可暂停查看。运动轨迹和检测结果均为离线演示。</p>
+        </section>
+        <section id="combined-panel" class="panel-section" aria-label="组合工艺流程" hidden>
+          <div class="panel-heading"><h2>组合工艺流程</h2><span class="batch-tag">离线演示</span></div>
+          <label class="combined-field">工件工艺路线
+            <select id="combined-station"></select>
+          </label>
+          <p id="combined-phase" role="status">等待开始</p>
+          <p id="combined-location"></p>
+          <div class="combined-actions"><button id="combined-play" type="button">开始组合流程</button><button id="combined-recover" type="button" hidden>恢复当前步骤</button></div>
+          <ol id="combined-trace"></ol>
+          <small id="combined-note">立库按工件标识出料。工件顺时针经过指定机床，在回程接受四轴终检，合格后回到原库位。</small>
+        </section>
+        <section id="production-stock" class="panel-section production-stock" aria-label="工件与库位">
+          <div class="panel-heading"><h2>工件与库位</h2><span class="state-badge">演示库存</span></div>
+          <p class="stock-warning" id="stock-warning" role="status" hidden></p>
+          <div id="stock-items" class="stock-items" aria-label="选择工件"></div>
+          <dl id="stock-detail" class="stock-detail"></dl>
+          <details class="stock-inventory">
+            <summary>库位占用 <span id="stock-count"></span></summary>
+            <table aria-label="本轮库存位置"><thead><tr><th scope="col">层</th><th scope="col">1 列</th><th scope="col">2 列</th><th scope="col">3 列</th></tr></thead><tbody id="stock-rack"></tbody></table>
+          </details>
+        </section>
+        <section class="panel-section" id="legacy-status" hidden>
+          <div class="panel-heading"><h2>设备状态</h2><span id="group-state" class="state-badge">离线</span></div>
+          <div class="status-grid">
+            <div class="status-card"><span>控制器 / PLC</span><strong data-value="null">待接入</strong><small>无实时状态</small></div>
+            <div class="status-card"><span>机器人状态</span><strong data-value="null">待接入</strong><small>AUBO / BRT</small></div>
+            <div class="status-card"><span>告警</span><strong data-value="null">未知</strong><small>等待控制器数据</small></div>
+          </div>
+        </section>
+        <section id="process-panel" class="panel-section" aria-label="加工与检测工艺卡" hidden>
+          <div class="panel-heading"><h2>工艺卡</h2><span class="batch-tag">离线模型</span></div>
+          <select id="process-station" aria-label="加工工位"><option value="cnc">左一 · 封闭式数控机床</option><option value="haas">左二 · Haas VF-3/SS</option><option value="five-axis">左三 · 五轴加工平台</option></select>
+          <select id="process-sample" aria-label="双孔工件样件" hidden><option value="nominal">标准孔距样件</option><option value="offset">右孔偏移样件</option></select>
+          <p id="process-id"></p><strong id="process-operation"></strong><p id="process-datum"></p>
+          <table id="process-measurements"><thead><tr><th>项目</th><th>目标</th><th>模型值</th></tr></thead><tbody></tbody></table>
+          <p id="process-outcome" role="status"></p><small id="process-basis"></small>
+        </section>
+        <section class="panel-section asset-section"><div class="panel-heading"><h2>当前设备</h2><span id="asset-count" class="subtle"></span></div><div id="asset-list" class="asset-list"></div></section>
+        <details id="kinematic-debug" class="panel-section kinematic-panel hidden">
+          <summary>关节调试 <span>候选映射</span></summary>
+          <p class="kinematic-note">轴心与方向尚待核对。仅用于检查部件父子关系，不代表现场运动或工艺动作。</p>
+          <button id="reset-aubo" class="ghost" type="button">候选关节回零</button><div id="joint-controls" class="joint-controls"></div>
+        </details>
+        <div class="panel-footer">现场坐标、控制器和采集接口待接入</div>
+      </aside>
+    </div>
+  </body>
+</html>
